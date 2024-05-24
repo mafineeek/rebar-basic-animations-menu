@@ -6,7 +6,6 @@ let mainMenu = null;
 let currentMenu = null;
 
 function createMenu(anims) {
-    // Usunięcie duplikatów kategorii animacji
     const categories = [];
     const uniqueCategories = anims.filter(animCategory => {
         if (categories.includes(animCategory.category)) {
