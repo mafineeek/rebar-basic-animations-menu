@@ -7,7 +7,7 @@ let currentMenu = null;
 
 function createMenu(anims) {
     const categories = [];
-    const uniqueCategories = anims.filter(animCategory => {
+    const uniqueCategories = anims.filter((animCategory) => {
         if (categories.includes(animCategory.category)) {
             return false;
         }
@@ -18,19 +18,22 @@ function createMenu(anims) {
     console.log('categories ' + JSON.stringify(categories));
     console.log('unique categories ' + JSON.stringify(uniqueCategories));
 
-    const options = uniqueCategories.map(animCategory => ({
+    const options = uniqueCategories.map((animCategory) => ({
         text: animCategory.category,
         type: 'invoke',
         value: '',
         callback: () => {
-            openSubMenu(animCategory.category, anims.filter(anim => anim.category === animCategory.category));
-        }
+            openSubMenu(
+                animCategory.category,
+                anims.filter((anim) => anim.category === animCategory.category),
+            );
+        },
     }));
 
     return useNativeMenu({
         header: 'Main Menu',
         noExit: false,
-        options: options
+        options: options,
     });
 }
 
@@ -39,23 +42,23 @@ function openSubMenu(header, animations) {
         currentMenu.destroy();
     }
     console.log(`animations ${JSON.stringify(animations)}`);
-    const options = animations.map(anim => ({
+    const options = animations.map((anim) => ({
         text: anim.name,
         type: 'invoke',
         value: '',
         callback: () => {
             alt.log(`${anim.name} selected`);
             alt.emitServer(AnimationMenuEvents.ToServer.PlayAnimation, anim);
-        }
+        },
     }));
 
     currentMenu = useNativeMenu({
         header: `${header} Menu`,
         backCallback: () => {
             currentMenu.destroy();
-            openMainMenu(animations);
+            mainMenu.open();
         },
-        options: options
+        options: options,
     });
 
     currentMenu.open();
@@ -71,7 +74,8 @@ function openMainMenu(anims) {
 }
 
 alt.on('keydown', (key) => {
-    if (key === 114) { // F3 key
+    if (key === 114) {
+        // F3 key
         alt.emitServer(AnimationMenuEvents.ToServer.RequestAnimsFromDatabase);
     }
 });

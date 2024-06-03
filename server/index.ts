@@ -23,9 +23,9 @@ async function fetchAnimationsFromDatabase() {
     }
 }
 
-async function addAnimationToDatabase(category, name, dict, animation, flag) {
+async function addAnimationToDatabase(category, name, dict, animation, flag, duration) {
     try {
-        const newAnimation = { category, name, dict, animation, flag };
+        const newAnimation = { category, name, dict, animation, flag, duration };
         const _id = await create(newAnimation, ANIMATION_COLLECTION);
         if (_id) {
             alt.log(`Added new animation: ${name} (${_id})`);
@@ -47,52 +47,70 @@ alt.onClient(AnimationMenuEvents.ToServer.PlayAnimation, (player, anim) => {
         useAnimation(player).clear();
         return;
     }
-    useAnimation(player).playInfinite(anim.dict, anim.animation, anim.flag);
+    if (anim.duration) {
+        useAnimation(player).playFinite(anim.dict, anim.animation, anim.flag, anim.duration);
+    } else {
+        useAnimation(player).playInfinite(anim.dict, anim.animation, anim.flag);
+    }
     useRebar().messenger.useMessenger().message.send(player, {
         type: 'system',
-        content: 'Animation started! To stop animation use /stopanim'
+        content: 'Animation started! To stop animation use /stopanim',
     });
 });
 
-useRebar().messenger.useMessenger().commands.register({
-    name: 'stopanim',
-    desc: 'Stop current animation',
-    callback: (player) => {
-        useAnimation(player).clear();
-        useRebar().messenger.useMessenger().message.send(player, {
-            type: 'system',
-            content: 'Stopped animation if present'
-        });
-    }
-});
-
-useRebar().messenger.useMessenger().commands.register({
-    name: 'addanimation',
-    desc: 'Add a new animation to the database',
-    callback: (player, ...args) => {
-        if (args.length < 5) {
+useRebar()
+    .messenger.useMessenger()
+    .commands.register({
+        name: 'stopanim',
+        desc: 'Stop current animation',
+        callback: (player) => {
+            useAnimation(player).clear();
             useRebar().messenger.useMessenger().message.send(player, {
-                type: 'alert',
-                content: 'Usage: /addanimation [category] [name] [dict] [animation] [flag]'
+                type: 'system',
+                content: 'Stopped animation if present',
             });
-            return;
-        }
+        },
+    });
 
-        const [category, name, dict, animation, flag] = args;
-        const flagInt = parseInt(flag, 10);
+useRebar()
+    .messenger.useMessenger()
+    .commands.register({
+        name: 'addanimation',
+        desc: 'Add a new animation to the database',
+        callback: (player, ...args) => {
+            if (args.length < 5) {
+                useRebar().messenger.useMessenger().message.send(player, {
+                    type: 'alert',
+                    content: 'Usage: /addanimation [category] [name] [dict] [animation] [flag] [duriation]',
+                });
+                return;
+            }
 
-        if (isNaN(flagInt)) {
-            useRebar().messenger.useMessenger().message.send(player, {
-                type: 'alert',
-                content: 'Flag must be a number'
-            });
-            return;
-        }
+            const [category, name, dict, animation, flag, duration] = args;
+            const flagInt = parseInt(flag, 10);
+            const durationInt = duration ? parseInt(duration, 10) : 0;
 
-        addAnimationToDatabase(category.replaceAll('_', ' '), name.replaceAll('_', ' '), dict, animation, flagInt);
-        useRebar().messenger.useMessenger().message.send(player, {
-            type: 'system',
-            content: `Animation ${name} added to category ${category}`
-        });
-    }
-});
+            if (isNaN(flagInt)) {
+                useRebar().messenger.useMessenger().message.send(player, {
+                    type: 'alert',
+                    content: 'Flag must be a number',
+                });
+                return;
+            }
+
+            addAnimationToDatabase(
+                category.replaceAll('_', ' '),
+                name.replaceAll('_', ' '),
+                dict,
+                animation,
+                flagInt,
+                durationInt,
+            );
+            useRebar()
+                .messenger.useMessenger()
+                .message.send(player, {
+                    type: 'system',
+                    content: `Animation ${name} added to category ${category}`,
+                });
+        },
+    });
